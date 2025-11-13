@@ -1,0 +1,34 @@
+openapi: 3.0.3
+info:
+  title: UserMint API
+  version: 0.1.0
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      responses: { '200': { description: OK }}
+  /v1/ingest/identify:
+    post:
+      summary: Resolve ISRC/UPC → draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idType: { type: string, enum: [ISRC, UPC] }
+                id: { type: string }
+      responses: { '200': { description: OK }}
+  /v1/mintables:
+    post:
+      summary: Create a mintable asset
+      responses: { '200': { description: OK }}
+  /v1/playback/token:
+    post:
+      summary: Return signed HLS URL if entitled
+      responses: { '200': { description: OK }}
+  /v1/hls/key:
+    get:
+      summary: AES-128 HLS key endpoint (entitlement-gated)
+      responses: { '200': { description: OK }}
