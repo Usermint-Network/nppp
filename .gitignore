@@ -20,3 +20,5 @@ crash.log
 
 # Node
 node_modules/
+.terraform.lock.hcl
+.terraform/
