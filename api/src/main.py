@@ -1,5 +1,12 @@
 from fastapi import FastAPI
+
 app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"status": "running"}
+
 @app.get("/healthz")
-def healthz():
+def health():
     return {"ok": True}
+
