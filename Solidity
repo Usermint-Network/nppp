@@ -9,3 +9,35 @@ contract ChamberPass is ERC1155, Ownable {
         _mint(to, id, amount, "");
     }
 }
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+import "openzeppelin-contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import "openzeppelin-contracts/access/Ownable.sol";
+
+contract SpecialMintableFactory is ERC1155Supply, Ownable {
+    mapping(uint256 => uint256) public price; // wei
+    constructor(string memory uri_) ERC1155(uri_) {}
+    function create(uint256 id, uint256 _supply, uint256 _price) external onlyOwner {
+        price[id] = _price; _mint(address(this), id, _supply, "");
+    }
+    function mint(uint256 id, uint256 amount) external payable {
+        require(msg.value >= price[id] * amount, "UNDERPAID");
+        _safeTransferFrom(address(this), msg.sender, id, amount, "");
+    }
+}
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+import "forge-std/Script.sol";
+import {ChamberPass} from "../src/ChamberPass.sol";
+import {SpecialMintableFactory} from "../src/SpecialMintableFactory.sol";
+
+contract Deploy is Script {
+    function run() external {
+      vm.startBroadcast();
+      new ChamberPass("ipfs://CHAMBER_URI/{id}.json");
+      new SpecialMintableFactory("ipfs://MINTABLE_URI/{id}.json");
+      vm.stopBroadcast();
+    }
+}
