@@ -32,3 +32,88 @@ paths:
     get:
       summary: AES-128 HLS key endpoint (entitlement-gated)
       responses: { '200': { description: OK }}
+
+name: CI API
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'api/**' ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_BUILD_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Login to Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      - name: Build & Push
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/usermint/api:${{ github.sha }}"
+          echo "$IMAGE" > api-image.txt
+          docker build -t "$IMAGE" ./api
+          docker push "$IMAGE"
+      - uses: actions/upload-artifact@v4
+        with: { name: api-image, path: api-image.txt }
+
+name: CI Worker
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'worker/**' ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_BUILD_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Login to Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      - name: Build & Push
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/usermint/worker:${{ github.sha }}"
+          echo "$IMAGE" > worker-image.txt
+          docker build -t "$IMAGE" ./worker
+          docker push "$IMAGE"
+      - uses: actions/upload-artifact@v4
+        with: { name: worker-image, path: worker-image.txt }
+
+name: Terraform (dev)
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths: [ 'infra/**', '.github/workflows/tf-plan-apply.yml' ]
+jobs:
+  tf:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: api-image, path: . }
+      - id: img
+        run: echo "image=$(cat api-image.txt || echo latest)" >> $GITHUB_OUTPUT
+      - uses: hashicorp/setup-terraform@v3
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_TERRAFORM_SA }}
+      - name: Init
+        working-directory: infra/environments/dev
+        run: terraform init
+      - name: Plan
+        working-directory: infra/environments/dev
+        run: terraform plan -var="api_image=${{ steps.img.outputs.image }}" -var="project_id=${{ secrets.GCP_PROJECT }}" -var="media_bucket_name=media-usermint-dev-${{ github.run_id }}" -var="cdn_signing_key=${{ secrets.CDN_SIGNING_KEY_DEV }}"
+      - name: Apply
+        working-directory: infra/environments/dev
+        run: terraform apply -auto-approve -var="api_image=${{ steps.img.outputs.image }}" -var="project_id=${{ secrets.GCP_PROJECT }}" -var="media_bucket_name=media-usermint-dev-${{ github.run_id }}" -var="cdn_signing_key=${{ secrets.CDN_SIGNING_KEY_DEV }}"
