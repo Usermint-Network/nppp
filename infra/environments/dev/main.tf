@@ -52,13 +52,37 @@ resource "google_cloud_run_v2_service" "api" {
   ingress = "INGRESS_TRAFFIC_ALL"
 }
 
-resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
-  project  = var.project_id
+resource "google_cloud_run_v2_service" "api" {
+  name     = "usermint-api-dev"
   location = var.region
-  name     = google_cloud_run_v2_service.api.name
 
-  role   = "roles/run.invoker"
-  member = "allUsers"
+  template {
+    service_account = google_service_account.api.email
+
+    containers {
+      image = var.api_image
+
+      env {
+        name  = "STORAGE_BUCKET"
+        value = var.media_bucket_name
+      }
+
+      env {
+        name  = "CDN_HOST"
+        value = ""
+      }
+
+      ports {
+        container_port = 8080
+      }
+    }
+  }
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+}
+
+output "api_url" {
+  value = google_cloud_run_v2_service.api.uri
 }
 
 output "api_url" {
