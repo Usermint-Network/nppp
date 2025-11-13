@@ -53,5 +53,6 @@ resource "google_cloud_run_v2_service" "api" {
 }
 
 output "api_url" {
-  value = google_cloud_run_v2_service.api.uri
+  value = google_cloud_run_service.api.status[0].url
+  description = "Primary Cloud Run URL (supports all routes)"
 }
