@@ -15,3 +15,132 @@ class PlaybackReq(BaseModel):
     albumId: Optional[str] = None
     trackId: Optional[str] = None
     quality: str = "hls_256"
+
+import os
+from typing import Optional
+
+CDN_HOST = os.getenv("CDN_HOST", "https://cdn.usermint.network")
+CDN_SIGNING_KEY = os.getenv("CDN_SIGNING_KEY", "dev-key")
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
+
+# TODO: wire Secret Manager fetch for CDN_SIGNING_KEY (Gradient 2)
+
+def get_env():
+    return dict(CDN_HOST=CDN_HOST, CDN_SIGNING_KEY=CDN_SIGNING_KEY, STORAGE_BUCKET=STORAGE_BUCKET)
+
+import time, hmac, hashlib, base64
+
+def sign_url(base: str, path: str, key: str, ttl: int = 300) -> str:
+    exp = int(time.time()) + ttl
+    msg = f"{path}{exp}".encode()
+    sig = base64.urlsafe_b64encode(hmac.new(key.encode(), msg, hashlib.sha256).digest()).decode().strip("=")
+    return f"{base}{path}?exp={exp}&sig={sig}"
+
+from typing import List
+import hashlib
+
+def _h(x: bytes) -> bytes: return hashlib.sha256(x).digest()
+
+def merkle_root(addresses: List[str]) -> str:
+    if not addresses: return ""
+    layer = [ _h(bytes.fromhex(a[2:])) for a in [a.lower() for a in addresses] ]
+    while len(layer) > 1:
+        nxt = []
+        for i in range(0, len(layer), 2):
+            a = layer[i]
+            b = layer[i+1] if i+1 < len(layer) else a
+            nxt.append(_h(a + b))
+        layer = nxt
+    return layer[0].hex()
+
+from google.cloud import storage
+import os
+
+_client = storage.Client()
+_bucket_name = os.getenv("STORAGE_BUCKET", "")
+
+def bucket():
+    return _client.bucket(_bucket_name)
+
+from fastapi import APIRouter
+from .models import IdentifyReq
+
+router = APIRouter()
+
+@router.post("/v1/ingest/identify")
+async def identify(req: IdentifyReq):
+    # TODO: call MusicBrainz/Discogs; for now, scaffold
+    if req.idType != "ISRC":
+        return {"resolved": False}
+    draft = {
+        "trackId": "trk_" + req.id.lower(),
+        "title": "Untitled",
+        "artists": [{"name": "Unknown"}],
+        "duration": 0,
+        "coverArt": None,
+        "source": ["placeholder"],
+        "confidence": 0.5,
+    }
+    return {"resolved": True, "entity": "track", "draft": draft}
+
+from fastapi import APIRouter
+from .models import CreateMintableReq
+
+router = APIRouter()
+
+@router.post("/v1/mintables")
+async def create_mintable(body: CreateMintableReq):
+    # TODO: persist + pin metadata; return public mint URL
+    m_id = "m_" + body.refId
+    return {
+        "mintableId": m_id,
+        "mintUrl": f"https://mint.usermint.network/m/{m_id}",
+        "metadataUri": "ipfs://placeholder"
+    }
+
+from fastapi import APIRouter, HTTPException
+from .models import PlaybackReq
+from .deps import get_env
+from .utils.crypto import sign_url
+
+router = APIRouter()
+
+@router.post("/v1/playback/token")
+async def playback_token(req: PlaybackReq):
+    env = get_env()
+    # TODO: entitlement check (wallet + (albumId|trackId))
+    if not (req.albumId or req.trackId):
+        raise HTTPException(400, "albumId or trackId required")
+    ref = req.albumId or req.trackId
+    path = f"/p/{ref}/master.m3u8"
+    url = sign_url(env["CDN_HOST"], path, env["CDN_SIGNING_KEY"], ttl=300)
+    return {"manifestUrl": url, "expiresIn": 300}
+
+from fastapi import APIRouter, HTTPException
+
+router = APIRouter()
+
+@router.get("/v1/hls/key")
+async def get_key(kid: str, ref: str):
+    # TODO: verify entitlement for ref; fetch key from Secret Manager/KMS-backed store
+    if not kid:
+        raise HTTPException(400, "kid required")
+    # DEV ONLY: return static 16-byte key (DO NOT USE IN PROD)
+    return b"0123456789abcdef"
+
+from fastapi import FastAPI
+from .identify import router as identify
+from .mintables import router as mintables
+from .playback import router as playback
+from .keyserver import router as keyserver
+
+app = FastAPI(title="UserMint API")
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True}
+
+app.include_router(identify)
+app.include_router(mintables)
+app.include_router(playback)
+app.include_router(keyserver)
