@@ -12,3 +12,5 @@ WORKDIR /app
 COPY src/ /app
 RUN pip3 install google-cloud-storage
 CMD ["python3", "worker.py"]
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
