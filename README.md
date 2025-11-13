@@ -61,3 +61,22 @@ usermint/
       ├─ ci-api.yml
       ├─ ci-worker.yml
       └─ tf-plan-apply.yml
+
+      # UserMint – Secret Chamber Platform
+
+Private, token‑gated music platform for **unreleased** tracks with End‑User Minting (EUM).
+
+## Gradients
+1. **Repo Foundation** (you are here) – code skeleton, CI, Terraform dev infra.
+2. Infrastructure (HTTPS LB, CDN, Secret Manager, Redis, MIG autoscaling).
+3. NFT + Entitlements (Chamber Pass, Mintable Factory, allowlists, Merkle proofs).
+4. Artist UX (upload → mintable → invite links) & Fan UX (invite → mint → play).
+5. Observability & Anti‑abuse (rate limits, watermarking, anomaly agents).
+
+## Quickstart
+```bash
+# Build API
+cd api && pip install -e . && uvicorn src.main:app --reload
+# Worker
+cd ../worker && python3 src/worker.py
+
