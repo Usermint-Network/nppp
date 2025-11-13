@@ -6,7 +6,6 @@ app = FastAPI()
 def root():
     return {"status": "running"}
 
-@app.get("/healthz")
+@app.get("/health")
 def health():
     return {"ok": True}
-
