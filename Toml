@@ -1,0 +1,11 @@
+[project]
+name = "usermint-api"
+version = "0.1.0"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic>=2",
+  "redis",
+  "requests",
+  "google-cloud-storage",
+]
