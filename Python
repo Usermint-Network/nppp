@@ -1,0 +1,17 @@
+from pydantic import BaseModel
+from typing import Optional, List, Dict
+
+class IdentifyReq(BaseModel):
+    idType: str  # "ISRC" | "UPC"
+    id: str
+
+class CreateMintableReq(BaseModel):
+    type: str  # "track" | "album"
+    refId: str
+    price: Dict[str, str]  # {amount, currency}
+    supply: int
+
+class PlaybackReq(BaseModel):
+    albumId: Optional[str] = None
+    trackId: Optional[str] = None
+    quality: str = "hls_256"
