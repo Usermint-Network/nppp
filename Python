@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+ilfrom pydantic import BaseModel
 from typing import Optional, List, Dict
 
 class IdentifyReq(BaseModel):
@@ -144,3 +144,22 @@ app.include_router(identify)
 app.include_router(mintables)
 app.include_router(playback)
 app.include_router(keyserver)
+
+import subprocess, sys
+
+def hls_pack(input_path: str, out_dir: str):
+    cmd = [
+        "ffmpeg", "-y", "-i", input_path,
+        "-filter:a", "loudnorm=I=-14:TP=-1.5:LRA=11",
+        "-c:a", "aac", "-b:a", "256k",
+
+
+        "-hls_time", "4", "-hls_playlist_type", "vod",
+        "-hls_segment_filename", f"{out_dir}/seg_%03d.ts",
+        f"{out_dir}/master.m3u8",
+    ]
+    return subprocess.call(cmd)
+
+from ffmpeg_pack import hls_pack
+print("Worker online (stub)")
+# TODO: subscribe to Pub/Sub, process jobs
