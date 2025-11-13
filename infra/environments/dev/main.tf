@@ -12,6 +12,9 @@ provider "google" {
   region  = var.region
 }
 
+# ---------------------------
+# Service Account
+# ---------------------------
 resource "google_service_account" "api" {
   account_id   = "usermint-api-dev"
   display_name = "Usermint API (dev)"
@@ -23,6 +26,18 @@ resource "google_project_iam_member" "api_artifact_reader" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
+# ---------------------------
+# API Image Variable
+# ---------------------------
+variable "api_image" {
+  type        = string
+  description = "Container image for the Usermint API"
+  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763054583"
+}
+
+# ---------------------------
+# Cloud Run API Service
+# ---------------------------
 resource "google_cloud_run_v2_service" "api" {
   name     = "usermint-api-dev"
   location = var.region
@@ -31,11 +46,7 @@ resource "google_cloud_run_v2_service" "api" {
     service_account = google_service_account.api.email
 
     containers {
-      variable "api_image" {
-  type        = string
-  description = "Container image for the Usermint API"
-  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763054583"
-}
+      image = var.api_image
 
       env {
         name  = "STORAGE_BUCKET"
@@ -56,7 +67,10 @@ resource "google_cloud_run_v2_service" "api" {
   ingress = "INGRESS_TRAFFIC_ALL"
 }
 
+# ---------------------------
+# Output: API URL
+# ---------------------------
 output "api_url" {
-  status[0].traffic[0].url
+  value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
 }
