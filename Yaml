@@ -236,3 +236,57 @@ jobs:
           TF_VAR_media_bucket_name: ${{ vars.MEDIA_BUCKET_DEV }}
           TF_VAR_api_image: ${{ steps.read_image.outputs.image }}
         run: terraform apply -auto-approve
+
+.github/workflows/deploy.yml
+
+name: Deploy (Dev)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+  REGION: ${{ secrets.GCP_REGION }}
+  TF_VAR_media_bucket_name: ${{ vars.MEDIA_BUCKET_DEV }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT }}
+          install_components: gke-gcloud-auth-plugin
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_BUILD_SA }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: infra/environments/dev
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: infra/environments/dev
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: infra/environments/dev
+        run: terraform apply -auto-approve
+
