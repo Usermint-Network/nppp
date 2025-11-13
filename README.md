@@ -1,7 +1,6 @@
 #Updated README.md 
 usermint/
 ├─ README.md
-├─ LICENSE
 ├─ .gitignore
 ├─ .gitattributes
 ├─ openapi/
