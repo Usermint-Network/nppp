@@ -31,7 +31,11 @@ resource "google_cloud_run_v2_service" "api" {
     service_account = google_service_account.api.email
 
     containers {
-      image = var.api_image
+      variable "api_image" {
+  type        = string
+  description = "Container image for the Usermint API"
+  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763054583"
+}
 
       env {
         name  = "STORAGE_BUCKET"
