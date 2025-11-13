@@ -9,3 +9,9 @@ dependencies = [
   "requests",
   "google-cloud-storage",
 ]
+
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+solc = '0.8.24'
