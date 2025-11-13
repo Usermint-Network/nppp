@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euxo pipefail
+API_IMAGE=$(curl -s -H 'Metadata-Flavor: Google' http://metadata/computeMetadata/v1/instance/attributes/API_IMAGE)
+MEDIA_BUCKET=$(curl -s -H 'Metadata-Flavor: Google' http://metadata/computeMetadata/v1/instance/attributes/MEDIA_BUCKET)
+CDN_HOST=$(curl -s -H 'Metadata-Flavor: Google' http://metadata/computeMetadata/v1/instance/attributes/CDN_HOST)
+CDN_SIGNING_KEY=$(curl -s -H 'Metadata-Flavor: Google' http://metadata/computeMetadata/v1/instance/attributes/CDN_SIGNING_KEY)
+apt-get update -y && apt-get install -y docker.io && systemctl enable --now docker
+if [[ "$API_IMAGE" == *"docker.pkg.dev"* ]]; then gcloud auth configure-docker --quiet || true; fi
+docker rm -f usermint-api || true
+(docker pull "$API_IMAGE" || true)
+docker run -d --restart=always --name usermint-api -p 8080:8080 \
+  -e CDN_HOST="$CDN_HOST" -e CDN_SIGNING_KEY="$CDN_SIGNING_KEY" -e STORAGE_BUCKET="$MEDIA_BUCKET" \
+  "$API_IMAGE"
