@@ -16,3 +16,6 @@ variable "media_bucket_name" {
 variable "api_image" {
   type        = string
   description = "Container image for the Usermint API"
+  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763087418"
+}
+
