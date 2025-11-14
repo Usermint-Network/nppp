@@ -110,4 +110,3 @@ output "api_url" {
   value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
 }
-
