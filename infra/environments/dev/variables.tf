@@ -20,3 +20,7 @@ variable "api_image" {
   # Optional: pin a sensible default to the last known-good image
   default = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763074929"
 }
+
+variable "project_id" { type = string }
+
+variable "region"     { type = string }
