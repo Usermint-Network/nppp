@@ -56,3 +56,22 @@ output "api_url" {
   value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
 }
+
+resource "google_secret_manager_secret" "api_secret_example" {
+  secret_id  = "dev-api-example-secret"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "api_secret_example_v1" {
+  secret      = google_secret_manager_secret.api_secret_example.id
+  secret_data = "dev-example-secret-value"
+}
+
+# Allow the API service account to access this secret
+resource "google_secret_manager_secret_iam_member" "api_can_access_example" {
+  secret_id = google_secret_manager_secret.api_secret_example.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
+}
