@@ -12,9 +12,6 @@ provider "google" {
   region  = var.region
 }
 
-# ---------------------------
-# Service Account
-# ---------------------------
 resource "google_service_account" "api" {
   account_id   = "usermint-api-dev"
   display_name = "Usermint API (dev)"
@@ -26,12 +23,6 @@ resource "google_project_iam_member" "api_artifact_reader" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
-# ---------------------------
-# API Image Variable
-# ---------------------------
-# ---------------------------
-# Cloud Run API Service
-# ---------------------------
 resource "google_cloud_run_v2_service" "api" {
   name     = "usermint-api-dev"
   location = var.region
@@ -61,9 +52,6 @@ resource "google_cloud_run_v2_service" "api" {
   ingress = "INGRESS_TRAFFIC_ALL"
 }
 
-# ---------------------------
-# Output: API URL
-# ---------------------------
 output "api_url" {
   value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
