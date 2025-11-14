@@ -56,3 +56,31 @@ output "api_url" {
   value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
 }
+
+resource "google_cloud_run_v2_service" "api" {
+  # ... existing fields ...
+
+  template {
+    service_account = google_service_account.api.email
+
+    containers {
+      image = var.api_image
+
+      env {
+        name = "EXAMPLE_SECRET"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.api_secret_example.name
+            version = "latest"
+          }
+        }
+      }
+
+      # existing STORAGE_BUCKET + CDN_HOST envs, ports, etc.
+    }
+
+    # template-level config stays the same
+  }
+
+  ingress = "INGRESS_TRAFFIC_ALL"
+}
