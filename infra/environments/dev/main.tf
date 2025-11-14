@@ -29,12 +29,6 @@ resource "google_project_iam_member" "api_artifact_reader" {
 # ---------------------------
 # API Image Variable
 # ---------------------------
-variable "api_image" {
-  type        = string
-  description = "Container image for the Usermint API"
-  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763054583"
-}
-
 # ---------------------------
 # Cloud Run API Service
 # ---------------------------
