@@ -1,53 +1,61 @@
-variable "domain_name" {
+variable "project_id" {
   type        = string
-<<<<<<< HEAD
-  description = "GCP Project ID"
-=======
-  description = "Domain name for the dev environment"
-  default     = "dev-api.usermintnetwork.com"
->>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
+  description = "GCP project ID"
 }
 
-variable "zone" {
+variable "region" {
   type        = string
-<<<<<<< HEAD
-  description = "GCP Region"
+  description = "GCP region (e.g., us-central1)"
 }
 
 variable "media_bucket_name" {
   type        = string
-  description = "Media bucket name"
+  description = "GCS bucket for media"
 }
 
 variable "api_image" {
   type        = string
   description = "Container image for the Usermint API"
-  default     = "us-central1-docker.pkg.dev/usermint-network/usermint/api:1763087418"
 }
 
-variable "project_id" { type = string }
-variable "region"     { type = string }          # e.g. us-central1
-variable "media_bucket_name" { type = string }   # you already use this
-variable "api_image"  { type = string }          # already in use
-
-# New bits:
 variable "domain_name" {
-  description = "Your custom domain for the HTTPS LB (e.g. api.example.com). Leave empty to skip cert/proxy."
   type        = string
-  default     = ""
+  description = "Domain name for the dev environment"
+  default     = "dev-api.usermintnetwork.com"
 }
 
-variable "redis_tier"   { type = string  default = "BASIC" }   # BASIC or STANDARD_HA
-variable "redis_size_gb"{ type = number  default = 1 }
-variable "vpc_name"     { type = string  default = "default" } # keep default VPC for dev
-variable "mig_zone"     { type = string  default = "us-central1-a" }
-variable "mig_size"     { type = number  default = 1 }
-
-
-
-=======
+variable "zone" {
+  type        = string
   description = "Default compute zone for dev worker MIG"
   default     = "us-central1-a"
 }
 
->>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
+variable "redis_tier" {
+  type        = string
+  description = "Redis tier (BASIC or STANDARD_HA)"
+  default     = "STANDARD_HA"
+}
+
+variable "redis_size_gb" {
+  type        = number
+  description = "Redis memory size in GB"
+  default     = 1
+}
+
+variable "vpc_name" {
+  type        = string
+  description = "VPC name (for future refactor if needed)"
+  default     = "usermint-dev-vpc"
+}
+
+variable "mig_zone" {
+  type        = string
+  description = "Zone for future MIG instances"
+  default     = "us-central1-a"
+}
+
+variable "mig_size" {
+  type        = number
+  description = "Target size for future MIG"
+  default     = 1
+}
