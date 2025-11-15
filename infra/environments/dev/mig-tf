@@ -1,0 +1,2 @@
+# MIG & autoscaler for background workers
+# TODO: define instance_template + managed instance group + autoscaler

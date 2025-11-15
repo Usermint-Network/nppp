@@ -1,10 +1,16 @@
-variable "project_id" {
+variable "domain_name" {
   type        = string
+<<<<<<< HEAD
   description = "GCP Project ID"
+=======
+  description = "Domain name for the dev environment"
+  default     = "dev-api.usermintnetwork.com"
+>>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
 }
 
-variable "region" {
+variable "zone" {
   type        = string
+<<<<<<< HEAD
   description = "GCP Region"
 }
 
@@ -39,3 +45,9 @@ variable "mig_size"     { type = number  default = 1 }
 
 
 
+=======
+  description = "Default compute zone for dev worker MIG"
+  default     = "us-central1-a"
+}
+
+>>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))

@@ -26,7 +26,34 @@ resource "google_project_iam_member" "api_artifact_reader" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
+<<<<<<< HEAD
 # Cloud Run (one resource only)
+=======
+########################
+# Secret Manager
+########################
+resource "google_secret_manager_secret" "api_secret_example" {
+  secret_id = "dev-api-example-secret"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "api_secret_example_v1" {
+  secret      = google_secret_manager_secret.api_secret_example.id
+  secret_data = "dev-example-secret-value"
+}
+
+resource "google_secret_manager_secret_iam_member" "api_can_access_example" {
+  secret_id = google_secret_manager_secret.api_secret_example.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
+}
+
+########################
+# Cloud Run (single resource)
+########################
+>>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
 resource "google_cloud_run_v2_service" "api" {
   name     = "usermint-api-dev"
   location = var.region
@@ -37,11 +64,21 @@ resource "google_cloud_run_v2_service" "api" {
     containers {
       image = var.api_image
 
+<<<<<<< HEAD
       # Regular envs
+=======
+>>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
       env {
         name  = "STORAGE_BUCKET"
         value = var.media_bucket_name
       }
+<<<<<<< HEAD
+=======
+      env {
+        name  = "CDN_HOST"
+        value = ""
+      }
+>>>>>>> b0a1b24 (Module 1: dev core infra (Cloud Run API, VPC, Redis, Secret Manager, CDN backend))
 
       env {
         name  = "CDN_HOST"
