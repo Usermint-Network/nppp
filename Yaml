@@ -290,3 +290,5 @@ jobs:
         working-directory: infra/environments/dev
         run: terraform apply -auto-approve
 
+credentials_json: ${{ secrets.GCP_SA_KEY }}
+
