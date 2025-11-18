@@ -47,19 +47,3 @@ jobs:
       - name: Save image tag artifact
         run: echo $TAG > image-tag.txt
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-credentials_json: ${{ secrets.GCP_SA_KEY }}
-
