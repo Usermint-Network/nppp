@@ -11,6 +11,7 @@ resource "usermint-media-dev-1 "media" {
   force_destroy = true
   autoclass { enabled = true }
   versioning { enabled = true }
+
 }
 resource "google_compute_firewall" "allow_http_https" {
   name = "usermint-allow-http-https" network = "default"
@@ -42,41 +43,39 @@ variable "media_bucket_name" {
   type = string
 }
 
-# The actual GCS bucket for uploads
-resource "google_storage_bucket" "media" {
-  name                        = var.media_bucket_name
-  location                    = var.region
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
+resource "google_cloud_run_v2_service" "api" {
+  name     = "usermint-api-dev"
+  location = var.region
+  project  = var.project_id
 
-  lifecycle_rule {
-    action {
-      type = "Delete"
-    }
-    condition {
-      age = 365
+  template {
+    service_account = google_service_account.api.email
+
+    containers {
+      image = var.api_image
+
+      # ✅ Bucket name env for your FastAPI
+      env {
+        name  = "MEDIA_BUCKET_NAME"
+        value = google_storage_bucket.media.name
+      }
+
+      # ✅ Service account email env for impersonation
+      env {
+        name  = "SERVICE_ACCOUNT_EMAIL"
+        value = google_service_account.api.email
+      }
+
+      ports {
+        container_port = 8080
+      }
     }
   }
-}
 
-resource "google_storage_bucket_iam_member" "api_media_writer" {
-  bucket = google_storage_bucket.media.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.api.email}"
-}
-
-# Media bucket variable (you already have this in use, keep it)
-variable "media_bucket_name" {
-  type = string
-}
-resource "google_storage_bucket_iam_member" "api_media_writer" {
-  bucket = google_storage_bucket.media.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.api.email}"
-}resource "google_storage_bucket_iam_member" "api_media_writer" {
-  bucket = google_storage_bucket.media.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.api.email}"
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
+  }
 }
 
 # The actual GCS bucket for uploads
