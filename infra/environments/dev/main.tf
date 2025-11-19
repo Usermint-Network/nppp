@@ -61,27 +61,23 @@ resource "google_cloud_run_v2_service" "api" {
   location = var.region
 
   template {
-    service_account = google_service_account.api.email
-
     containers {
       image = var.api_image
 
       env {
-        name  = "STORAGE_BUCKET"
+        name  = "MEDIA_BUCKET_DEV_1"
         value = var.media_bucket_name
       }
 
       env {
-        name  = "CDN_HOST"
+        name  = "terraform-sa@usermint-network.iam.gserviceaccount.com"
         value = ""
       }
 
       env {
         name = "EXAMPLE_SECRET"
-        value_source {
-          secret_key_ref {
-            secret  = google_secret_manager_secret.api_secret_example.name
-            version = "latest"
+        value=
+google_service_account.api.email
           }
         }
       }
