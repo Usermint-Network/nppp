@@ -1,6 +1,8 @@
 ilfrom pydantic import BaseModel
 from typing import Optional, List, Dict
 
+target_scopes=["https://www.googleapis.com/auth/devstorage.read_write"]
+
 class IdentifyReq(BaseModel):
     idType: str  # "ISRC" | "UPC"
     id: str
