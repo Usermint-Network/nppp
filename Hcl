@@ -4,8 +4,8 @@ terraform {
 provider "google" { project = var.project_id region = var.region zone = var.zone }
 resource "google_service_account" "api_sa" { account_id = "usermint-api-dev" display_name = "UserMint API Dev SA" }
 resource "google_project_iam_member" "api_token_creator" { project = var.project_id role = "roles/iam.serviceAccountTokenCreator" member = "serviceAccount:${google_service_account.api_sa.email}" }
-resource "MEDIA_BUCKET_DEV_1" "media" {
-  name = var.media_bucket_name
+resource "usermint-media-dev-1 "media" {
+  name = var.media_bucket_name = "usermint-media-dev-1"
   location = var.region
   uniform_bucket_level_access = true
   force_destroy = true
