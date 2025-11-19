@@ -65,8 +65,8 @@ resource "google_cloud_run_v2_service" "api" {
       image = var.api_image
 
       env {
-        name  = "MEDIA_BUCKET_DEV_1"
-        value = var.media_bucket_name
+        name  = "usermint-media-dev-1"
+        value = var.media_bucket_name = "usermint-media-dev-1
       }
 
       env {
@@ -94,6 +94,27 @@ google_service_account.api.email
     google_secret_manager_secret_iam_member.api_can_access_example,
     google_project_iam_member.api_artifact_reader,
   ]
+}
+# Media bucket variable (you already have this in use, keep it)
+variable "media_bucket_name" {
+  type = string
+}
+
+# The actual GCS bucket for uploads
+resource "google_storage_bucket" "media" {
+  name                        = var.media_bucket_name
+  location                    = var.region
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+
+  lifecycle_rule {
+    action {
+      type = "Delete"
+    }
+    condition {
+      age = 365
+    }
+  }
 }
 
 ########################
