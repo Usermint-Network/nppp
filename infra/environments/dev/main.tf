@@ -27,6 +27,12 @@ resource "google_project_iam_member" "api_artifact_reader" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
+resource "google_project_iam_member" "api_token_creator" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountTokenCreator"
+  member  = "serviceAccount:${google_service_account.api.email}"
+}
+
 ########################
 # Secret Manager
 ########################
@@ -53,54 +59,9 @@ resource "google_secret_manager_secret_iam_member" "api_can_access_example" {
 }
 
 ########################
-# Cloud Run API
+# Media Bucket
 ########################
 
-resource "google_cloud_run_v2_service" "api" {
-  name     = "usermint-api-dev"
-  location = var.region
-
-  template {
-    containers {
-      image = var.api_image
-
-      env {
-        name  = "usermint-media-dev-1"
-        value = var.media_bucket_name = "usermint-media-dev-1
-      }
-
-      env {
-        name  = "terraform-sa@usermint-network.iam.gserviceaccount.com"
-        value = ""
-      }
-
-      env {
-        name = "EXAMPLE_SECRET"
-        value=
-google_service_account.api.email
-          }
-        }
-      }
-
-      ports {
-        container_port = 8080
-      }
-    }
-  }
-
-  ingress = "INGRESS_TRAFFIC_ALL"
-
-  depends_on = [
-    google_secret_manager_secret_iam_member.api_can_access_example,
-    google_project_iam_member.api_artifact_reader,
-  ]
-}
-# Media bucket variable (you already have this in use, keep it)
-variable "media_bucket_name" {
-  type = string
-}
-
-# The actual GCS bucket for uploads
 resource "google_storage_bucket" "media" {
   name                        = var.media_bucket_name
   location                    = var.region
@@ -117,8 +78,59 @@ resource "google_storage_bucket" "media" {
   }
 }
 
+resource "google_storage_bucket_iam_member" "api_media_writer" {
+  bucket = google_storage_bucket.media.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.api.email}"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "invoker" {
+  name    = google_cloud_run_v2_service.api.name
+  location = var.region
+  project  = var.project_id
+  role    = "roles/run.invoker"
+  member  = "user:founder@usermintnetwork.com"
+}
+
 ########################
-# Networking (VPC + Subnet)
+# Cloud Run API
+########################
+
+resource "google_cloud_run_v2_service" "api" {
+  name     = "usermint-api-dev"
+  location = var.region
+  project  = var.project_id
+
+  template {
+    service_account = google_service_account.api.email
+
+    containers {
+      image = var.api_image
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "MEDIA_BUCKET_NAME"
+        value = google_storage_bucket.media.name
+      }
+
+      env {
+        name  = "SERVICE_ACCOUNT_EMAIL"
+        value = google_service_account.api.email
+      }
+    }
+  }
+
+  traffic {
+    type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
+    percent = 100
+  }
+}
+
+########################
+# Networking (VPC + Subne
 ########################
 
 resource "google_compute_network" "dev_vpc" {
@@ -159,3 +171,4 @@ output "api_url" {
   value       = google_cloud_run_v2_service.api.uri
   description = "Primary Cloud Run URL (supports all routes)"
 }
+

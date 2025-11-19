@@ -15,10 +15,10 @@ class UploadRequest(BaseModel):
     content_type: str
 
 
+
+# Env vars provided by Terraform / Cloud Run, now using consistent variable names
 MEDIA_BUCKET = os.environ["MEDIA_BUCKET_NAME"]
 SERVICE_ACCOUNT_EMAIL = os.environ["SERVICE_ACCOUNT_EMAIL"]
-
-storage_client = storage.Client()
 
 
 @app.get("/")
@@ -34,21 +34,25 @@ def health():
 @app.post("/media/upload-request")
 def create_upload_url(body: UploadRequest):
     try:
-        # 1. Get the “default” creds (compute_engine.Credentials on Cloud Run)
-        credentials, _ = google.auth.default()
+        # 1) Base credentials = Cloud Run service account (no private key)
+        base_credentials, _ = google.auth.default()
 
-        # 2. Turn them into impersonated credentials with signing ability
+        # 2) Impersonate the service account that CAN sign
         signing_credentials = impersonated_credentials.Credentials(
-            source_credentials=credentials,
+            source_credentials=base_credentials,
             target_principal=SERVICE_ACCOUNT_EMAIL,
-            target_scopes=["https://www.googleapis.com/auth/devstorage.read_write"],
+            target_scopes=[
+                "https://www.googleapis.com/auth/devstorage.read_write",
+            ],
             lifetime=3600,
         )
 
-        # 3. Use those to generate the signed URL
+        # 3) Storage client using the impersonated signer
+        storage_client = storage.Client()
         bucket = storage_client.bucket(MEDIA_BUCKET)
         blob = bucket.blob(body.filename)
 
+        # 4) Generate a v4 signed URL with the impersonated signer
         upload_url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(hours=1),
@@ -68,4 +72,3 @@ def create_upload_url(body: UploadRequest):
             status_code=500,
             detail=f"Error generating signed URL: {e}",
         )
-

@@ -22,3 +22,4 @@ crash.log
 node_modules/
 .terraform.lock.hcl
 .terraform/
+infra/environments/dev/terraform.tfvars
