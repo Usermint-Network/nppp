@@ -23,3 +23,8 @@ node_modules/
 .terraform.lock.hcl
 .terraform/
 infra/environments/dev/terraform.tfvars
+
+# local dev artifacts
+.env.example
+.tmp/
+orchestration-api/orchestration.db
