@@ -1,0 +1,1 @@
+NPPP:V1|project=usermint-network|region=us-central1|service=nppp-genesis|freshness=permanent|bundle=gs://usermint-network-notary-dev/bundles/genesis_bundle.tar.gz|sha256=<GENESIS_SHA256>|created=2026-03-26T00:00:00Z
