@@ -1,0 +1,38 @@
+sequenceDiagram
+
+participant Client
+participant API as NPPP API
+participant GCS as Storage (GCS)
+participant Verify as Verification Engine
+
+%% Step 1
+Client->>API: POST /v1/verify (proof string)
+
+%% Step 2
+API->>API: Parse proof string
+
+%% Step 3
+API->>API: Extract bundle URL + expected SHA-256
+
+%% Step 4
+API->>GCS: Request evidence bundle
+
+%% Step 5
+GCS-->>API: Return bundle
+
+%% Step 6
+API->>Verify: Send bundle for hashing
+
+%% Step 7
+Verify->>Verify: Compute SHA-256
+
+%% Step 8
+Verify->>Verify: Compare computed vs expected hash
+
+alt Hash Match
+    Verify-->>API: Verified = TRUE
+    API-->>Client: SHA Replay Verified: OK
+else Hash Mismatch
+    Verify-->>API: Verified = FALSE
+    API-->>Client: Verification Failed
+end
