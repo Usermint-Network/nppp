@@ -1,0 +1,334 @@
+openapi: 3.1.0
+info:
+  title: NPPP API
+  version: v1
+  description: >
+    HTTP Interface for the Notarization Proof Packet Protocol (NPPP).
+    This API allows systems to submit artifacts for notarization, retrieve
+    proof metadata, and perform replay verification.
+
+servers:
+  - url: https://api.usermint.network
+
+tags:
+  - name: Notarization
+    description: Create notarization proofs for submitted artifacts.
+  - name: Verification
+    description: Replay verification of existing NPPP proofs.
+  - name: Proof Metadata
+    description: Retrieve metadata for previously generated proofs.
+
+paths:
+  /v1/notarize:
+    post:
+      tags:
+        - Notarization
+      summary: Create a notarization proof
+      description: >
+        Canonicalizes the submitted artifact, generates a deterministic evidence
+        bundle, computes the SHA-256 hash, constructs the NPPP proof string,
+        and records a proof ledger entry.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotarizeRequest'
+            examples:
+              datasetExample:
+                summary: Dataset notarization request
+                value:
+                  service: nppp-notary
+                  artifact_type: dataset
+                  freshness: 7d
+                  evidence:
+                    path: dataset.csv
+      responses:
+        '200':
+          description: Notarization proof created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotarizeResponse'
+              examples:
+                successExample:
+                  value:
+                    proof_id: nppp_000001
+                    proof: NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z
+                    bundle: gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz
+                    bundle_sha256: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+        '400':
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/verify:
+    post:
+      tags:
+        - Verification
+      summary: Verify an NPPP proof
+      description: >
+        Parses the proof string, retrieves the referenced evidence bundle,
+        computes the SHA-256 hash, and compares the computed hash to the proof hash.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+            examples:
+              verifyExample:
+                summary: Verification request
+                value:
+                  proof: NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z
+      responses:
+        '200':
+          description: Verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyResponse'
+              examples:
+                verifiedExample:
+                  value:
+                    verified: true
+                    expected_sha256: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+                    computed_sha256: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+                    status: SHA Replay Verified: OK
+        '400':
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Proof or evidence bundle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/proof/{id}:
+    get:
+      tags:
+        - Proof Metadata
+      summary: Retrieve proof metadata
+      description: Returns metadata for a previously generated proof.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique proof identifier
+          schema:
+            type: string
+            example: nppp_000001
+      responses:
+        '200':
+          description: Proof metadata returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProofMetadataResponse'
+              examples:
+                proofMetadataExample:
+                  value:
+                    proof_id: nppp_000001
+                    artifact_type: dataset
+                    service: nppp-notary
+                    bundle_sha256: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+                    bundle_url: gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz
+                    created_at: 2026-03-26T00:00:00Z
+                    verification_status: verified
+        '401':
+          description: Authentication required or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Proof not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+
+  schemas:
+    NotarizeRequest:
+      type: object
+      required:
+        - service
+        - artifact_type
+        - freshness
+        - evidence
+      properties:
+        service:
+          type: string
+          example: nppp-notary
+        artifact_type:
+          type: string
+          example: dataset
+        freshness:
+          type: string
+          description: Evidence collection window
+          example: 7d
+        evidence:
+          type: object
+          required:
+            - path
+          properties:
+            path:
+              type: string
+              example: dataset.csv
+
+    NotarizeResponse:
+      type: object
+      required:
+        - proof_id
+        - proof
+        - bundle
+        - bundle_sha256
+      properties:
+        proof_id:
+          type: string
+          example: nppp_000001
+        proof:
+          type: string
+          example: NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z
+        bundle:
+          type: string
+          example: gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz
+        bundle_sha256:
+          type: string
+          example: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+
+    VerifyRequest:
+      type: object
+      required:
+        - proof
+      properties:
+        proof:
+          type: string
+          example: NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z
+
+    VerifyResponse:
+      type: object
+      required:
+        - verified
+        - expected_sha256
+        - computed_sha256
+        - status
+      properties:
+        verified:
+          type: boolean
+          example: true
+        expected_sha256:
+          type: string
+          example: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+        computed_sha256:
+          type: string
+          example: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+        status:
+          type: string
+          example: SHA Replay Verified: OK
+
+    ProofMetadataResponse:
+      type: object
+      required:
+        - proof_id
+        - artifact_type
+        - service
+        - bundle_sha256
+        - bundle_url
+        - created_at
+        - verification_status
+      properties:
+        proof_id:
+          type: string
+          example: nppp_000001
+        artifact_type:
+          type: string
+          example: dataset
+        service:
+          type: string
+          example: nppp-notary
+        bundle_sha256:
+          type: string
+          example: 8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6
+        bundle_url:
+          type: string
+          example: gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz
+        created_at:
+          type: string
+          format: date-time
+          example: 2026-03-26T00:00:00Z
+        verification_status:
+          type: string
+          example: verified
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: invalid_request
+        message:
+          type: string
+          example: Missing required field: evidence
