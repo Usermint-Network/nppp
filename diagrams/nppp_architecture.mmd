@@ -1,59 +1,27 @@
-flowchart LR
+sequenceDiagram
+    participant Client as Client Layer
+    participant API as NPPP API
+    participant Canon as Canonicalization Engine
+    participant Bundle as Evidence Bundle Builder
+    participant Hash as SHA-256 Hash Engine
+    participant Proof as Proof Constructor
+    participant GCS as GCS Evidence Storage
+    participant Ledger as Proof Ledger Database
+    participant Replay as Replay Engine
 
-subgraph CLIENT["Client Layer"]
-    ci["CI/CD Pipelines"]
-    dev["Developer Tools"]
-    ai["AI Systems"]
-end
+    Client->>API: Submit artifact for notarization
+    API->>Canon: Canonicalize artifact
+    Canon->>Bundle: Build deterministic evidence bundle
+    Bundle->>Hash: Compute SHA-256
+    Hash->>Proof: Construct NPPP proof string
+    Proof->>GCS: Store evidence bundle
+    Proof->>Ledger: Record proof metadata
+    Proof-->>Client: Return proof string + metadata
 
-subgraph API["NPPP API"]
-    notarize["POST /v1/notarize"]
-    verify["POST /v1/verify"]
-    proofmeta["GET /v1/proof/{id}"]
-end
-
-subgraph PROCESSING["Processing Layer"]
-    canon["Canonicalization Engine"]
-    bundle["Evidence Bundle Builder"]
-    hash["SHA-256 Hash Engine"]
-    constructor["Proof Constructor"]
-end
-
-subgraph STORAGE["Storage Layer"]
-    gcs["GCS Evidence Storage<br/>gs://usermint-network-notary-dev/bundles"]
-end
-
-subgraph LEDGER["Ledger Layer"]
-    ledger["Proof Ledger Database"]
-end
-
-subgraph VERIFICATION["Verification Engine"]
-    replay["Replay Engine"]
-    recompute["Hash Recompute"]
-    compare["Comparison Logic"]
-end
-
-proofstring["NPPP Proof String"]
-result["Verification Result"]
-
-ci --> notarize
-dev --> notarize
-ai --> notarize
-
-notarize --> canon
-canon --> bundle
-bundle --> hash
-hash --> constructor
-
-bundle --> gcs
-constructor --> ledger
-constructor --> proofstring
-
-ci --> verify
-dev --> verify
-
-verify --> replay
-replay --> gcs
-replay --> recompute
-recompute --> compare
-compare --> result
+    Client->>API: Submit proof for verification
+    API->>Replay: Start replay verification
+    Replay->>GCS: Retrieve bundle
+    Replay->>Hash: Recompute SHA-256
+    Hash-->>Replay: Computed hash
+    Replay-->>API: Comparison result
+    API-->>Client: Verification response
