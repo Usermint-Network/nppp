@@ -1,78 +1,59 @@
 flowchart LR
 
-%% =======================
-%% CLIENT LAYER
-%% =======================
 subgraph CLIENT["Client Layer"]
-    A1[CI/CD Pipelines]
-    A2[Developer Tools]
-    A3[AI Systems]
+    ci["CI/CD Pipelines"]
+    dev["Developer Tools"]
+    ai["AI Systems"]
 end
 
-%% =======================
-%% API LAYER
-%% =======================
 subgraph API["NPPP API"]
-    B1[/v1/notarize]
-    B2[/v1/verify]
-    B3[/v1/proof/{id}]
+    notarize["POST /v1/notarize"]
+    verify["POST /v1/verify"]
+    proofmeta["GET /v1/proof/{id}"]
 end
 
-%% =======================
-%% PROCESSING LAYER
-%% =======================
 subgraph PROCESSING["Processing Layer"]
-    C1[Canonicalization Engine]
-    C2[Evidence Bundle Builder]
-    C3[SHA-256 Hash Engine]
-    C4[Proof Constructor]
+    canon["Canonicalization Engine"]
+    bundle["Evidence Bundle Builder"]
+    hash["SHA-256 Hash Engine"]
+    constructor["Proof Constructor"]
 end
 
-%% =======================
-%% STORAGE + LEDGER
-%% =======================
 subgraph STORAGE["Storage Layer"]
-    D1[GCS Evidence Storage\n gs://usermint-network-notary-dev/bundles]
+    gcs["GCS Evidence Storage<br/>gs://usermint-network-notary-dev/bundles"]
 end
 
 subgraph LEDGER["Ledger Layer"]
-    E1[Proof Ledger Database]
+    ledger["Proof Ledger Database"]
 end
 
-%% =======================
-%% VERIFICATION
-%% =======================
-subgraph VERIFY["Verification Engine"]
-    F1[Replay Engine]
-    F2[Hash Recompute]
-    F3[Comparison Logic]
+subgraph VERIFICATION["Verification Engine"]
+    replay["Replay Engine"]
+    recompute["Hash Recompute"]
+    compare["Comparison Logic"]
 end
 
-%% =======================
-%% OUTPUT
-%% =======================
-G1[NPPP Proof String]
-G2[Verification Result]
+proofstring["NPPP Proof String"]
+result["Verification Result"]
 
-%% =======================
-%% FLOWS
-%% =======================
+ci --> notarize
+dev --> notarize
+ai --> notarize
 
-A1 --> B1
-A2 --> B1
-A3 --> B1
+notarize --> canon
+canon --> bundle
+bundle --> hash
+hash --> constructor
 
-B1 --> C1 --> C2 --> C3 --> C4
+bundle --> gcs
+constructor --> ledger
+constructor --> proofstring
 
-C2 --> D1
-C4 --> E1
-C4 --> G1
+ci --> verify
+dev --> verify
 
-%% Verification flow
-A1 --> B2
-A2 --> B2
-
-B2 --> F1
-F1 --> D1
-F1 --> F2 --> F3
-F3 --> G2
+verify --> replay
+replay --> gcs
+replay --> recompute
+recompute --> compare
+compare --> result
