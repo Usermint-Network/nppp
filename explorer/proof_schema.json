@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Usermint-Network/nppp/explorer/proof_schema.json",
+  "title": "NPPP Proof Object",
+  "description": "Machine-readable schema for a normalized NPPP v1 proof representation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project",
+    "region",
+    "service",
+    "freshness",
+    "bundle",
+    "sha256",
+    "created",
+    "proof"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "V1",
+      "description": "Protocol version identifier."
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the infrastructure project producing the proof.",
+      "example": "usermint-network"
+    },
+    "region": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Infrastructure region associated with the service.",
+      "example": "us-central1"
+    },
+    "service": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Service identity responsible for notarization.",
+      "example": "nppp-notary"
+    },
+    "freshness": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Evidence collection window.",
+      "example": "7d"
+    },
+    "bundle": {
+      "type": "string",
+      "minLength": 1,
+      "description": "URI of the deterministic evidence bundle.",
+      "example": "gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the evidence bundle.",
+      "example": "8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp representing proof creation time.",
+      "example": "2026-03-26T00:00:00Z"
+    },
+    "proof": {
+      "type": "string",
+      "pattern": "^NPPP:V1\\|project=.*\\|region=.*\\|service=.*\\|freshness=.*\\|bundle=.*\\|sha256=[a-f0-9]{64}\\|created=.*$",
+      "description": "Canonical NPPP proof string.",
+      "example": "NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z"
+    }
+  }
+}

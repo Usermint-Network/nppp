@@ -1,0 +1,11 @@
+{
+  "version": "V1",
+  "project": "usermint-network",
+  "region": "us-central1",
+  "service": "nppp-notary",
+  "freshness": "7d",
+  "bundle": "gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz",
+  "sha256": "8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6",
+  "created": "2026-03-26T00:00:00Z",
+  "proof": "NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=7d|bundle=gs://usermint-network-notary-dev/bundles/example_bundle.tar.gz|sha256=8c95954ad897cd933d760eb29dd7ee7bf69ec7e94b49ed88317b554bfb7ba4d6|created=2026-03-26T00:00:00Z"
+}
