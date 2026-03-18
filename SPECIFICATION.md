@@ -1,216 +1,200 @@
 # NPPP v1 Specification
-
-Notarization Proof Packet Protocol
+**Notarization Proof Packet Protocol**
 
 Version: V1  
-Status: Active
+Status: Active  
 
 ---
 
 # 1. Overview
 
-NPPP (Notarization Proof Packet Protocol) defines a deterministic method for binding digital artifacts to cryptographic integrity proofs that can be replayed and verified independently.
+NPPP (Notarization Proof Packet Protocol) defines a deterministic method for binding digital artifacts to cryptographic integrity proofs that can be independently replayed and verified.
 
 The protocol produces:
 
-• a deterministic evidence bundle  
-• a SHA-256 integrity hash  
-• a canonical proof string  
-• a replay verification procedure
+- a deterministic evidence bundle
+- a SHA-256 integrity hash
+- a canonical proof string
+- a replay verification procedure
 
-The output of the protocol is a **proof packet** that allows independent verification of the integrity of the evidence bundle.
+The output of the protocol is a **proof packet** that enables independent verification of artifact integrity without requiring trust in the originating system.
 
 ---
 
 # 2. Terminology
 
-Artifact  
+## 2.1 Artifact
 A digital object submitted for notarization.
 
-Canonical Artifact  
-An artifact normalized according to canonicalization rules.
+## 2.2 Canonical Artifact
+An artifact normalized according to NPPP canonicalization rules.
 
-Evidence Bundle  
-A deterministic archive containing evidence required to reproduce the proof.
+## 2.3 Evidence Bundle
+A deterministic archive containing all material required to reproduce the proof.
 
-Proof String  
-A canonical machine-readable representation of a notarization event.
+## 2.4 Proof String
+A canonical, machine-readable representation of a notarization event.
 
-Verifier  
-A system or individual performing replay verification.
+## 2.5 Verifier
+An entity performing replay verification.
 
 ---
 
-# 3. Proof String Format
+# 3. Protocol Model
 
-All NPPP proofs follow the canonical structure:
+NPPP operates as a two-phase protocol:
 
+## 3.1 Notarization Phase
+1. Canonicalize artifact
+2. Construct deterministic evidence bundle
+3. Compute SHA-256 hash of bundle
+4. Generate canonical proof string
+
+## 3.2 Verification Phase
+1. Parse proof string
+2. Retrieve referenced bundle
+3. Recompute SHA-256 hash
+4. Compare against proof hash
+
+---
+
+# 4. Proof String Format
+
+## 4.1 Canonical Structure
+
+All NPPP v1 proofs MUST follow this exact format:
+
+```text
 NPPP:V1|project=<project>|region=<region>|service=<service>|freshness=<window>|bundle=<bundle_uri>|sha256=<bundle_hash>|created=<timestamp>
+```
+## 4.2 Field Ordering (MANDATORY)
+Fields MUST appear in this exact order:
+- `project`
+- `region`
+- `service`
+- `freshness`
+- `bundle`
+- `sha256`
+- `created`
 
+Reordering fields produces a non-canonical proof.
 
+## 4.3 Serialization Rules
+Proof strings MUST:
+- use `|` as a delimiter
+- encode fields as `key=value`
+- contain no additional fields
+- contain no leading or trailing whitespace
+- use lowercase hexadecimal for `sha256`
 
-Fields are pipe-delimited.
+# 5. Field Definitions
 
-The ordering of fields MUST remain stable for version V1.
+| Field       | Description                        |
+|-------------|------------------------------------|
+| `project`   | Infrastructure project identifier  |
+| `region`    | Infrastructure region              |
+| `service`   | Notarization service identity      |
+| `freshness` | Evidence collection window         |
+| `bundle`    | URI of deterministic evidence bundle |
+| `sha256`    | SHA-256 hash of bundle             |
+| `created`   | UTC timestamp (RFC 3339)           |
 
----
+# 6. Canonicalization Rules
 
-# 4. Field Definitions
+Artifacts MUST be canonicalized prior to bundle construction.
 
-project
+Canonicalization MUST ensure:
+- deterministic file ordering
+- stable directory structure
+- normalized metadata serialization
+- deterministic archive generation
 
-Identifier of the infrastructure project producing the proof.
+Identical logical inputs MUST produce identical bundle bytes.
 
-region
+# 7. Evidence Bundle
 
-Infrastructure region associated with the service.
+## 7.1 Structure
+Typical bundle layout:
+```
+bundle/
+  artifact/
+  metadata/
+  receipts/
+```
 
-service
+## 7.2 Determinism Requirements
+Bundles MUST satisfy:
+- stable file ordering
+- stable directory layout
+- stable metadata encoding
+- deterministic archive construction
 
-Service identity responsible for notarization.
-
-freshness
-
-Evidence collection window.
-
-Example:
-freshness=7d
-
-bundle
-
-URI of the deterministic evidence bundle.
-
-Example:
-gs://bucket/path/bundle.tar.gz
-
-
-sha256
-
-SHA-256 hash of the evidence bundle.
-
-created
-
-UTC timestamp representing proof creation time.
-
-Example:
-2026-03-02T00:11:17Z
-
----
-
-# 5. Canonicalization Rules
-
-Artifacts MUST be canonicalized prior to bundle generation.
-
-Canonicalization includes:
-
-• deterministic file ordering  
-• normalized metadata where possible  
-• stable archive structure  
-
-The purpose of canonicalization is to ensure that identical artifacts produce identical evidence bundles.
-
----
-
-# 6. Evidence Bundle Structure
-
-Evidence bundles are deterministic archives.
-
-Typical bundle contents include:
-
-• artifact payload  
-• service metadata  
-• infrastructure metadata  
-• runtime evidence  
-• protocol receipts
-
-The bundle MUST produce identical SHA-256 hashes when rebuilt from identical inputs.
-
----
-
-# 7. Deterministic Bundle Requirements
-
-To preserve replay verification capability, bundles MUST satisfy:
-
-1. Stable file ordering
-2. Stable directory layout
-3. Canonical encoding of metadata
-4. Deterministic archive generation
-
-If these conditions are violated, verification may fail.
-
----
+Violation of these requirements results in verification failure.
 
 # 8. Verification Algorithm
+Verification MUST be performed as follows:
+1. Parse proof string
+2. Validate format and field order
+3. Extract bundle URI
+4. Retrieve bundle
+5. Compute SHA-256 hash over raw bytes
+6. Compare computed hash with proof hash
 
-Verification is performed by replaying the integrity check.
+**Result:**
+- `computed_hash == expected_hash` → `VERIFIED`
+- `else` → `FAILED`
 
-Procedure:
-
-1. Parse the NPPP proof string
-2. Retrieve the evidence bundle
-3. Compute SHA-256 of the bundle
-4. Compare computed hash with the proof hash
-5. If equal → verification succeeds
-
-Example result:
+Example output:
+```
 SHA Replay Verified: OK
-
----
+```
 
 # 9. Remote Verification
+Verification MAY be performed using remotely retrieved bundles.
 
-Verification may also occur using a remotely retrieved bundle.
+Requirements:
+- bundle bytes MUST be exact
+- hashing MUST be performed on raw bytes
 
-Procedure:
-
-1. Retrieve bundle from the URI
-2. Compute SHA-256
-3. Compare with proof string
-4. If equal → remote verification succeeds
-
-Example result:
+Example output:
+```
 Remote SHA Replay Verified: OK
-
----
+```
 
 # 10. Protocol Guarantees
-
 NPPP v1 guarantees:
+- deterministic evidence packaging
+- cryptographic integrity verification
+- replay-verifiable proofs
 
-• deterministic evidence packaging  
-• cryptographic integrity verification  
-• replay-verifiable proofs  
+Verification requires:
+- proof string
+- bundle access
+- SHA-256 computation
 
-The protocol allows any verifier to independently validate the integrity of the evidence bundle.
-
-Verification does not require trust in the original operator.
-
----
+No trust in the originating system is required.
 
 # 11. Non-Goals
+NPPP v1 does NOT guarantee:
+- truthfulness of artifacts
+- correctness of artifact contents
+- ownership of assets
+- identity of submitters
+- external system validity
 
-NPPP v1 intentionally does not attempt to solve several classes of problems.
+NPPP verifies integrity, not truth.
 
-The protocol does not guarantee:
+# 12. Versioning
+The NPPP v1 proof format is frozen.
 
-• truthfulness of submitted artifacts  
-• correctness of artifact contents  
-• legal ownership of underlying assets  
-• identity verification of submitters  
-• external system integrity  
+Any changes to:
+- field structure
+- hashing rules
+- serialization format
 
-NPPP verifies **cryptographic integrity of evidence**, not the semantic truth of the artifact itself.
+MUST result in a new protocol version.
 
-The protocol focuses exclusively on reproducible integrity verification.
+Existing proofs MUST remain verifiable indefinitely.
 
----
-
-# 12. Version Stability
-
-NPPP v1 defines the first stable proof format.
-
-The V1 proof string format is frozen for compatibility.
-
-Future protocol improvements will require a version increment.
-
-Existing proofs will remain verifiable indefinitely.
+# 13. Compliance Language
+The key words MUST, SHOULD, and MAY are to be interpreted as described in RFC 2119.
