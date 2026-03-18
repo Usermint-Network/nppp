@@ -1,0 +1,59 @@
+# NPPP Notarization GitHub Action
+#
+# This workflow demonstrates how to use the NPPP API
+# to notarize a build artifact inside a GitHub Actions pipeline.
+#
+# For more context, see:
+# https://github.com/usermint/nppp/tree/main/protocol
+#
+
+name: NPPP Notarization
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  notarize:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Artifact
+        run: |
+          echo "Preparing artifact for notarization..."
+          ls -la
+
+      - name: Submit to NPPP
+        env:
+          NPPP_API_URL: https://api.usermint.network
+          NPPP_API_KEY: ${{ secrets.NPPP_API_KEY }}
+        run: |
+          echo "Submitting artifact to NPPP..."
+
+          RESPONSE=$(curl -s -X POST "$NPPP_API_URL/v1/notarize" \
+            -H "Authorization: Bearer $NPPP_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "service": "github-actions",
+              "artifact_type": "repository",
+              "freshness": "7d",
+              "evidence": {
+                "path": "."
+              }
+            }')
+
+          echo "Response:"
+          echo "$RESPONSE"
+
+          echo "$RESPONSE" > nppp_proof.json
+
+      - name: Save Proof Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nppp-proof
+          path: nppp_proof.json
