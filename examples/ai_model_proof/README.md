@@ -10,9 +10,13 @@ An AI system produces a trained model and needs to prove:
 - model reproducibility
 - model version authenticity
 
+---
+
 ## Step 1 — Submit for Notarization
 
-```json
+```http
+POST /v1/notarize
+
 {
   "service": "nppp-notary",
   "artifact_type": "ai_model",
@@ -23,26 +27,33 @@ An AI system produces a trained model and needs to prove:
     "config": "config.json"
   }
 }
-Step 2 — Proof Generation
-The system bundles:
-model weights
-training dataset
-training configuration
-Then computes:
-deterministic bundle
-SHA-256 hash
-NPPP proof string
-Step 3 — Verification
-Verification ensures:
-model has not been altered
-training inputs match original state
-reproducibility is possible
-What is Proven
-Model integrity
-Training lineage
-Reproducibility guarantees
-Why This Matters
-This enables:
-AI auditability
-regulatory compliance
-trust in AI outputs
+```
+
+## Step 2 — Receive Proof
+```json
+{
+  "proof_id": "nppp_000003",
+  "proof": "NPPP:V1|project=usermint-network|region=us-central1|service=nppp-notary|freshness=30d|bundle=gs://...|sha256=...|created=2026-03-26T00:02:00Z"
+}
+```
+
+## Step 3 — Verification
+```http
+POST /v1/verify
+
+{
+  "proof": "NPPP:V1|..."
+}
+```
+
+---
+
+## What is Proven
+* Model integrity
+* Training lineage
+* Reproducibility guarantees
+
+## Why This Matters
+* AI auditability
+* Regulatory compliance
+* Trust in AI outputs
