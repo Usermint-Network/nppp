@@ -34,22 +34,40 @@ A pipeline generates a dataset:
 
 ```text
 dataset.csv
+```
+
 The workflow:
-submits dataset for notarization
-receives proof string
-logs proof or stores it as an artifact
-Requirements
-NPPP API endpoint (e.g., https://api.usermint.network)
-API key for authentication
-Artifact path available in workflow
-Outputs
-The workflow produces:
-NPPP proof string
-proof metadata (optional)
-Security Notes
-API keys should be stored in GitHub Secrets
-Proof strings may be logged or persisted depending on workflow design
-Example Integration
-See nppp-notarize.yml for a full workflow example.
+
+- submits dataset for notarization
+- receives proof string
+- logs proof or stores it as an artifact
 
 ---
+
+## Requirements
+
+- NPPP API endpoint (e.g. `https://api.usermint.network`)
+- API key for authentication
+- Artifact path available in workflow
+
+---
+
+## Outputs
+
+The workflow produces:
+
+- NPPP proof string
+- proof metadata (optional)
+
+---
+
+## Security Notes
+
+- API keys should be stored in GitHub Secrets
+- Proof strings may be logged or persisted depending on workflow design
+
+---
+
+## Example Integration
+
+See `nppp-notarize.yml` for a full workflow example.
