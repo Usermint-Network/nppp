@@ -1,0 +1,97 @@
+# =========================
+# OS / System Files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Editor / IDE
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Environment Variables / Secrets
+# =========================
+.env
+.env.*
+*.env
+
+# GCP / Cloud Credentials
+*.json
+!explorer/*.json
+!api/*.json
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+
+# =========================
+# Node / JS
+# =========================
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# =========================
+# CLI / Binary Outputs
+# =========================
+bin/
+*.exe
+*.out
+
+# =========================
+# Temporary Files
+# =========================
+tmp/
+temp/
+*.tmp
+
+# =========================
+# NPPP-Specific (IMPORTANT)
+# =========================
+
+# Local evidence bundles (never commit these)
+bundles/
+*.tar.gz
+*.zip
+
+# Generated proofs / outputs
+*.proof.json
+*.bundle.json
+
+# =========================
+# Coverage / Testing
+# =========================
+coverage/
+*.lcov
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.backup
+*.old
