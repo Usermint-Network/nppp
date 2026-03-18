@@ -2,10 +2,6 @@
 #
 # This workflow demonstrates how to use the NPPP API
 # to notarize a build artifact inside a GitHub Actions pipeline.
-#
-# For more context, see:
-# https://github.com/usermint/nppp/tree/main/protocol
-#
 
 name: NPPP Notarization
 
@@ -28,14 +24,23 @@ jobs:
           echo "Preparing artifact for notarization..."
           ls -la
 
+      - name: Install jq if needed
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
       - name: Submit to NPPP
         env:
           NPPP_API_URL: https://api.usermint.network
           NPPP_API_KEY: ${{ secrets.NPPP_API_KEY }}
         run: |
+          set -euo pipefail
+
           echo "Submitting artifact to NPPP..."
 
-          RESPONSE=$(curl -s -X POST "$NPPP_API_URL/v1/notarize" \
+          RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "$NPPP_API_URL/v1/notarize" \
             -H "Authorization: Bearer $NPPP_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
@@ -47,10 +52,30 @@ jobs:
               }
             }')
 
-          echo "Response:"
-          echo "$RESPONSE"
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          STATUS=$(echo "$RESPONSE" | tail -n1)
 
-          echo "$RESPONSE" > nppp_proof.json
+          echo "HTTP Status: $STATUS"
+          echo "Response Body:"
+          echo "$BODY"
+
+          if [ "$STATUS" -ne 200 ] && [ "$STATUS" -ne 201 ]; then
+            echo "NPPP notarization failed"
+            exit 1
+          fi
+
+          echo "$BODY" > nppp_proof.json
+
+          if ! jq -e '.proof' nppp_proof.json > /dev/null; then
+            echo "No proof field found in API response"
+            exit 1
+          fi
+
+          echo "### NPPP Proof Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$BODY" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Save Proof Artifact
         uses: actions/upload-artifact@v4
